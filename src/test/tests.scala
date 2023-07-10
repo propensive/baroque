@@ -3,6 +3,7 @@ package baroque
 import probably.*
 import gossamer.*
 import spectacular.*
+import anticipation.*
 import quantitative.*
 
 given Decimalizer = Decimalizer(3)

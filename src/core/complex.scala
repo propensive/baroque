@@ -20,31 +20,27 @@ object Complex:
     new Show[Complex[Quantity[UnitsType]]]:
       def apply(value: Complex[Quantity[UnitsType]]): Text =
         t"${value.real.value} + ${value.imaginary.value}𝒊 ${Quantity.renderUnits(value.real.units)}"
-  
-case class Complex[+ComponentType](real: ComponentType, imaginary: ComponentType):
-  def +
-      [ComponentType2]
-      (right: Complex[ComponentType2])
-      (using add: Add[ComponentType, ComponentType2])
-      : Complex[add.Result] =
-    Complex[add.Result](add(real, right.real, false), add(imaginary, right.imaginary, false))
-  
-  def -
-      [ComponentType2]
-      (right: Complex[ComponentType2])
-      (using add: Add[ComponentType, ComponentType2])
-      : Complex[add.Result] =
-    Complex[add.Result](add(real, right.real, true), add(imaginary, right.imaginary, true))
-  
-  def *
-      [ComponentType2]
-      (right: Complex[ComponentType2])
-      (using multiply: Multiply[ComponentType, ComponentType2])
-      (using add: Add[multiply.Result, multiply.Result])
-      : Complex[add.Result] =
-    val ac: multiply.Result = multiply(real, right.real)
-    val bd: multiply.Result = multiply(imaginary, right.imaginary)
-    val ad: multiply.Result = multiply(real, right.imaginary)
-    val bc: multiply.Result = multiply(imaginary, right.real)
     
-    Complex[add.Result](add(ac, bd, true), add(ad, bc, false))
+  inline given [LeftType, RightType]
+      (using multiply: Multiply[LeftType, RightType])
+      (using add: Add[multiply.Result, multiply.Result])
+      : Multiply[Complex[LeftType], Complex[RightType]] with
+    
+    type Result = Complex[add.Result]
+    
+    def apply(left: Complex[LeftType], right: Complex[RightType]) =
+      Complex[add.Result](left.real*right.real - left.imaginary*right.imaginary,
+          left.real*right.imaginary + left.imaginary*right.real)
+  
+  inline given [LeftType, RightType]
+      (using add: Add[LeftType, RightType])
+      : Add[Complex[LeftType], Complex[RightType]] with
+    type Result = Complex[add.Result]
+    
+    def apply
+        (left: Complex[LeftType], right: Complex[RightType], subtract: Boolean)
+        : Complex[add.Result] =
+      if subtract then Complex(left.real + right.real, left.imaginary + right.imaginary)
+      else Complex(left.real - right.real, left.imaginary - right.imaginary)
+  
+case class Complex[+ComponentType](real: ComponentType, imaginary: ComponentType)
